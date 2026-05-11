@@ -7,6 +7,26 @@ interface StatusResultProps {
 }
 
 function StatusWawancara({ peserta }: StatusResultProps) {
+  // Cek apakah sudah dijadwalkan atau masih menunggu
+  const sudahDijadwalkan = peserta.tanggal_wawancara && peserta.waktu_wawancara;
+
+  if (!sudahDijadwalkan) {
+    // Status: Menunggu
+    return (
+      <div className="p-6 bg-yellow-900/30 border border-yellow-700/50 rounded-lg">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="inline-block w-3 h-3 rounded-full bg-yellow-400" />
+          <h3 className="text-lg font-semibold text-yellow-300">Status: Menunggu</h3>
+        </div>
+        <p className="text-yellow-200 font-medium mb-3">{peserta.nama}</p>
+        <p className="text-sm text-yellow-300/80">
+          Pendaftaran kamu sudah diterima. Silakan tunggu informasi jadwal wawancara selanjutnya.
+        </p>
+      </div>
+    );
+  }
+
+  // Status: Wawancara (sudah ada jadwal)
   return (
     <div className="p-6 bg-blue-900/30 border border-blue-700/50 rounded-lg">
       <div className="flex items-center gap-2 mb-4">
@@ -25,7 +45,7 @@ function StatusWawancara({ peserta }: StatusResultProps) {
           <span className="font-medium">Jam:</span> {peserta.waktu_wawancara}
         </p>
         <p>
-          <span className="font-medium">Lokasi:</span> {peserta.lokasi_wawancara}
+          <span className="font-medium">Lokasi:</span> {peserta.lokasi_wawancara || 'Ormawa Lt 1 Fakultas Sains'}
         </p>
       </div>
     </div>
