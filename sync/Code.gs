@@ -57,8 +57,8 @@ function validateConfig() {
  * Column B (index 1): NIM
  * Column C (index 2): Nama
  */
-var COLUMN_NIM = 1;   // Column B (0-indexed)
-var COLUMN_NAMA = 2;  // Column C (0-indexed)
+var COLUMN_NIM = 2;   // Column C (0-indexed)
+var COLUMN_NAMA = 1;  // Column B (0-indexed)
 
 /**
  * Nama sheet yang berisi data form responses.
