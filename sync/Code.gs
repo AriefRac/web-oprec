@@ -60,6 +60,25 @@ function validateConfig() {
 var COLUMN_NIM = 1;   // Column B (0-indexed)
 var COLUMN_NAMA = 2;  // Column C (0-indexed)
 
+/**
+ * Nama sheet yang berisi data form responses.
+ * Ganti jika nama sheet berbeda.
+ */
+var SHEET_NAME = 'Form Responses 1';
+
+/**
+ * Mendapatkan sheet data (bukan active sheet, tapi by name)
+ */
+function getDataSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    // Fallback: coba nama lain
+    sheet = ss.getSheetByName('Form responses 1') || ss.getSheets()[0];
+  }
+  return sheet;
+}
+
 // ============================================================
 // TRIGGER FUNCTIONS
 // ============================================================
@@ -77,7 +96,7 @@ function onFormSubmit(e) {
   }
 
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var sheet = getDataSheet();
     var lastRow = sheet.getLastRow();
     var data = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn()).getValues()[0];
 
@@ -130,7 +149,7 @@ function syncAllRows() {
     return;
   }
 
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var sheet = getDataSheet();
   var lastRow = sheet.getLastRow();
 
   // Skip header row (row 1)
@@ -356,7 +375,7 @@ function syncWithDelete() {
   }
 
   var config = getConfig();
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var sheet = getDataSheet();
   var lastRow = sheet.getLastRow();
 
   if (lastRow < 2) {
