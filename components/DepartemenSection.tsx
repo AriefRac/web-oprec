@@ -51,13 +51,13 @@ export default function DepartemenSection() {
           Kenali 7 departemen di HMPS Informatika dan temukan yang paling cocok
           untukmu.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {departemenList.map((dept, index) => (
             <div
               key={dept.nama}
               className={`${
                 index === departemenList.length - 1 && departemenList.length % 3 === 1
-                  ? "sm:col-span-2 lg:col-span-1 lg:col-start-2"
+                  ? "sm:col-span-2 sm:max-w-sm sm:mx-auto lg:col-span-1 lg:col-start-2 lg:max-w-none"
                   : ""
               }`}
             >

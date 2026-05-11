@@ -2,7 +2,6 @@
 
 import React from "react";
 import { TimelineItem as TimelineItemType } from "@/types/timeline";
-import TimelineItem from "./TimelineItem";
 
 /**
  * Determines the status of a timeline item based on the current date.
@@ -25,9 +24,6 @@ export function getTimelineStatus(
   return "future";
 }
 
-/**
- * Legacy helper for backward compatibility.
- */
 export function isTimelineActive(
   tanggalMulai: string,
   tanggalSelesai: string,
@@ -36,18 +32,12 @@ export function isTimelineActive(
   return getTimelineStatus(tanggalMulai, tanggalSelesai, today) === "active";
 }
 
-/**
- * Sorts timeline items by their `urutan` field in ascending order.
- */
 export function sortTimelineByUrutan(
   items: TimelineItemType[]
 ): TimelineItemType[] {
   return [...items].sort((a, b) => a.urutan - b.urutan);
 }
 
-/**
- * Default timeline items with updated dates for May 2026.
- */
 const defaultTimelineItems: TimelineItemType[] = [
   {
     id: "default-1",
@@ -83,51 +73,106 @@ const defaultTimelineItems: TimelineItemType[] = [
   },
 ];
 
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
 export default function TimelineSection() {
   const sortedItems = sortTimelineByUrutan(defaultTimelineItems);
 
   return (
     <section id="timeline" className="py-16 px-4">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl font-bold text-center text-gray-100 mb-4">
           Timeline
         </h2>
-        <p className="text-center text-gray-400 mb-12">
+        <p className="text-center text-gray-400 mb-14">
           Tahapan proses open recruitment dari awal hingga akhir.
         </p>
 
-        {/* Horizontal Timeline */}
-        <div className="overflow-x-auto pb-4">
-          <div className="flex items-start min-w-max mx-auto relative">
-            {/* Connecting line */}
-            <div className="absolute top-[10px] left-[80px] right-[80px] h-0.5 flex">
-              {sortedItems.map((item, index) => {
-                if (index === sortedItems.length - 1) return null;
-                const status = getTimelineStatus(item.tanggal_mulai, item.tanggal_selesai);
-                const nextStatus = getTimelineStatus(
-                  sortedItems[index + 1].tanggal_mulai,
-                  sortedItems[index + 1].tanggal_selesai
-                );
-                const lineColored = status === "completed" || (status === "active" && (nextStatus === "active" || nextStatus === "completed"));
-                return (
-                  <div
-                    key={`line-${item.id}`}
-                    className={`flex-1 h-full ${
-                      lineColored ? "bg-violet-500" : "bg-slate-700"
-                    }`}
-                  />
-                );
-              })}
+        {/* Horizontal Timeline - Centered */}
+        <div className="flex justify-center">
+          <div className="relative flex items-start">
+            {/* Connecting line - starts at first node center, ends at last node center */}
+            <div
+              className="absolute h-0.5 top-[10px]"
+              style={{
+                left: "80px",
+                right: "80px",
+              }}
+            >
+              <div className="flex h-full w-full">
+                {sortedItems.map((item, index) => {
+                  if (index === sortedItems.length - 1) return null;
+                  const status = getTimelineStatus(item.tanggal_mulai, item.tanggal_selesai);
+                  const lineColored = status === "completed" || status === "active";
+                  return (
+                    <div
+                      key={`line-${item.id}`}
+                      className={`flex-1 h-full transition-colors duration-500 ${
+                        lineColored ? "bg-violet-500" : "bg-slate-700"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Timeline items */}
-            {sortedItems.map((item) => (
-              <TimelineItem
-                key={item.id}
-                item={item}
-                status={getTimelineStatus(item.tanggal_mulai, item.tanggal_selesai)}
-              />
-            ))}
+            {/* Timeline nodes */}
+            {sortedItems.map((item) => {
+              const status = getTimelineStatus(item.tanggal_mulai, item.tanggal_selesai);
+              return (
+                <div key={item.id} className="flex flex-col items-center w-[160px]">
+                  {/* Node */}
+                  <div
+                    className={`relative z-10 w-5 h-5 rounded-full border-2 transition-all duration-300 ${
+                      status === "completed"
+                        ? "bg-violet-500 border-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]"
+                        : status === "active"
+                        ? "bg-violet-500 border-violet-400 animate-glow-pulse"
+                        : "bg-slate-800 border-slate-600"
+                    }`}
+                  />
+
+                  {/* Content */}
+                  <div className="mt-4 text-center px-2">
+                    <h3
+                      className={`font-semibold text-sm ${
+                        status === "completed" || status === "active"
+                          ? "text-violet-300"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {item.nama_tahap}
+                    </h3>
+                    <p
+                      className={`text-xs mt-1 ${
+                        status === "active" ? "text-gray-300" : "text-gray-500"
+                      }`}
+                    >
+                      {formatDate(item.tanggal_mulai)}
+                      {item.tanggal_mulai !== item.tanggal_selesai && (
+                        <> – {formatDate(item.tanggal_selesai)}</>
+                      )}
+                    </p>
+                    {status === "active" && (
+                      <span className="inline-block mt-2 text-xs font-medium text-violet-200 bg-violet-600/30 px-2 py-0.5 rounded-full border border-violet-500/30">
+                        Berlangsung
+                      </span>
+                    )}
+                    {status === "completed" && (
+                      <span className="inline-block mt-2 text-xs font-medium text-green-300 bg-green-600/20 px-2 py-0.5 rounded-full border border-green-500/30">
+                        ✓ Selesai
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

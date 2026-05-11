@@ -1,7 +1,6 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import DepartemenSection from "@/components/DepartemenSection";
-import ContactSection from "@/components/ContactSection";
 import CekStatusSection from "@/components/CekStatusSection";
 import TimelineSection from "@/components/TimelineSection";
 import Footer from "@/components/Footer";
@@ -14,7 +13,6 @@ export default function Home() {
       <DepartemenSection />
       <TimelineSection />
       <CekStatusSection />
-      <ContactSection />
       <Footer />
     </main>
   );
