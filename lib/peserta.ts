@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Peserta } from '@/types/peserta';
 
 /**
@@ -6,7 +6,7 @@ import { Peserta } from '@/types/peserta';
  * Returns null if not found.
  */
 export async function getPesertaByNim(nim: string): Promise<Peserta | null> {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabase
     .from('peserta')
     .select('*')
     .eq('nim', nim)
@@ -27,7 +27,7 @@ export async function getPesertaByNim(nim: string): Promise<Peserta | null> {
  * Get all peserta from the database.
  */
 export async function getAllPeserta(): Promise<Peserta[]> {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabase
     .from('peserta')
     .select('*')
     .order('created_at', { ascending: false });
@@ -45,7 +45,7 @@ export async function getAllPeserta(): Promise<Peserta[]> {
 export async function createPeserta(
   data: Omit<Peserta, 'id' | 'created_at' | 'updated_at'>
 ): Promise<Peserta> {
-  const { data: created, error } = await supabaseAdmin
+  const { data: created, error } = await supabase
     .from('peserta')
     .insert(data)
     .select()
@@ -65,7 +65,7 @@ export async function updatePeserta(
   id: string,
   data: Partial<Peserta>
 ): Promise<Peserta> {
-  const { data: updated, error } = await supabaseAdmin
+  const { data: updated, error } = await supabase
     .from('peserta')
     .update(data)
     .eq('id', id)
@@ -83,7 +83,7 @@ export async function updatePeserta(
  * Delete a peserta by ID.
  */
 export async function deletePeserta(id: string): Promise<void> {
-  const { error } = await supabaseAdmin
+  const { error } = await supabase
     .from('peserta')
     .delete()
     .eq('id', id);

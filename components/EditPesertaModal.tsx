@@ -11,6 +11,9 @@ interface EditPesertaModalProps {
   peserta: Peserta | null;
 }
 
+// UI status includes "menunggu" which maps to wawancara without jadwal
+type UIStatus = 'menunggu' | 'wawancara' | 'lulus' | 'tidak_lulus';
+
 function getHariFromDate(dateStr: string): string {
   if (!dateStr) return '';
   const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -18,9 +21,20 @@ function getHariFromDate(dateStr: string): string {
   return days[date.getDay()] || '';
 }
 
+function getUIStatus(peserta: Peserta): UIStatus {
+  if (peserta.status === 'wawancara') {
+    // Jika belum ada jadwal → menunggu, jika sudah ada → wawancara
+    if (peserta.tanggal_wawancara && peserta.waktu_wawancara) {
+      return 'wawancara';
+    }
+    return 'menunggu';
+  }
+  return peserta.status;
+}
+
 export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }: EditPesertaModalProps) {
   const [nama, setNama] = useState('');
-  const [status, setStatus] = useState<StatusPeserta>('wawancara');
+  const [uiStatus, setUiStatus] = useState<UIStatus>('menunggu');
   const [tanggalWawancara, setTanggalWawancara] = useState('');
   const [waktuWawancara, setWaktuWawancara] = useState('');
   const [lokasiWawancara, setLokasiWawancara] = useState('');
@@ -31,7 +45,7 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
   useEffect(() => {
     if (peserta) {
       setNama(peserta.nama || '');
-      setStatus(peserta.status || 'wawancara');
+      setUiStatus(getUIStatus(peserta));
       setTanggalWawancara(peserta.tanggal_wawancara || '');
       setWaktuWawancara(peserta.waktu_wawancara || '');
       setLokasiWawancara(peserta.lokasi_wawancara || 'Ormawa Lt 1 Fakultas Sains');
@@ -53,13 +67,13 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
     // Validation
     const validationErrors: string[] = [];
     if (!nama) validationErrors.push('Nama wajib diisi');
-    if (!status) validationErrors.push('Status wajib dipilih');
-    if (status === 'wawancara') {
+
+    if (uiStatus === 'wawancara') {
       if (!tanggalWawancara) validationErrors.push('Tanggal wawancara wajib diisi');
       if (!waktuWawancara) validationErrors.push('Jam wawancara wajib diisi');
       if (!lokasiWawancara) validationErrors.push('Lokasi wawancara wajib diisi');
     }
-    if (status === 'lulus') {
+    if (uiStatus === 'lulus') {
       if (!bidang) validationErrors.push('Bidang penempatan wajib diisi');
     }
 
@@ -68,21 +82,29 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
       return;
     }
 
+    // Map UI status to database status
+    const dbStatus: StatusPeserta = uiStatus === 'menunggu' ? 'wawancara' : uiStatus;
     const hari = getHariFromDate(tanggalWawancara);
 
     const data: Partial<Peserta> = {
       nama,
-      status,
-      ...(status === 'wawancara' && {
-        hari_wawancara: hari,
-        tanggal_wawancara: tanggalWawancara,
-        waktu_wawancara: waktuWawancara,
-        lokasi_wawancara: lokasiWawancara,
-      }),
-      ...(status === 'lulus' && {
-        bidang,
-      }),
+      status: dbStatus,
     };
+
+    if (uiStatus === 'wawancara') {
+      data.hari_wawancara = hari;
+      data.tanggal_wawancara = tanggalWawancara;
+      data.waktu_wawancara = waktuWawancara;
+      data.lokasi_wawancara = lokasiWawancara;
+    } else if (uiStatus === 'menunggu') {
+      // Clear jadwal fields
+      data.hari_wawancara = '';
+      data.tanggal_wawancara = '';
+      data.waktu_wawancara = '';
+      data.lokasi_wawancara = '';
+    } else if (uiStatus === 'lulus') {
+      data.bidang = bidang;
+    }
 
     setLoading(true);
     try {
@@ -130,27 +152,28 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
             />
           </div>
 
-          {/* Status - keputusan diterima/tidak */}
+          {/* Keputusan */}
           <div>
             <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700 mb-1">
               Keputusan
             </label>
             <select
               id="edit-status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as StatusPeserta)}
+              value={uiStatus}
+              onChange={(e) => setUiStatus(e.target.value as UIStatus)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             >
-              <option value="wawancara">Menunggu (Wawancara)</option>
-              <option value="lulus">Diterima (Lulus)</option>
+              <option value="menunggu">Menunggu</option>
+              <option value="wawancara">Wawancara (Jadwalkan)</option>
+              <option value="lulus">Diterima</option>
               <option value="tidak_lulus">Tidak Diterima</option>
             </select>
           </div>
 
           {/* Jadwal Wawancara - shown when status is wawancara */}
-          {status === 'wawancara' && (
-            <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <p className="text-sm font-medium text-yellow-800">Jadwal Wawancara</p>
+          {uiStatus === 'wawancara' && (
+            <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm font-medium text-blue-800">Jadwal Wawancara</p>
               <div>
                 <label htmlFor="edit-tanggal" className="block text-sm font-medium text-gray-700 mb-1">
                   Tanggal
@@ -195,11 +218,21 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
             </div>
           )}
 
-          {/* Bidang - shown when status is lulus */}
-          {status === 'lulus' && (
+          {/* Menunggu info */}
+          {uiStatus === 'menunggu' && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                Peserta masih menunggu. Belum dijadwalkan wawancara.
+              </p>
+            </div>
+          )}
+
+          {/* Bidang - shown when status is lulus (diterima) */}
+          {uiStatus === 'lulus' && (
             <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm font-medium text-green-800 mb-3">Penempatan Bidang</p>
               <label htmlFor="edit-bidang" className="block text-sm font-medium text-gray-700 mb-1">
-                Bidang Penempatan
+                Bidang
               </label>
               <select
                 id="edit-bidang"
@@ -216,11 +249,14 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
                 <option value="PAO">PAO</option>
                 <option value="Minat dan Bakat">Minat dan Bakat</option>
               </select>
+              <p className="text-xs text-green-700 mt-2">
+                Bidang akan muncul saat peserta cek status di halaman pengumuman.
+              </p>
             </div>
           )}
 
           {/* Info tidak diterima */}
-          {status === 'tidak_lulus' && (
+          {uiStatus === 'tidak_lulus' && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-700">
                 Peserta akan menerima pesan bahwa tidak lolos seleksi saat mengecek status.

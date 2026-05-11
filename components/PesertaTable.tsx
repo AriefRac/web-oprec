@@ -63,22 +63,29 @@ export default function PesertaTable() {
     setLoading(false);
   }
 
-  function formatStatus(status: string): string {
+  function formatStatus(status: string, p: Peserta): string {
     switch (status) {
       case 'wawancara':
+        // Bedakan menunggu vs sudah dijadwalkan
+        if (p.tanggal_wawancara && p.waktu_wawancara) {
+          return 'Wawancara';
+        }
         return 'Menunggu';
       case 'lulus':
-        return 'Lulus';
+        return 'Diterima';
       case 'tidak_lulus':
-        return 'Tidak Lulus';
+        return 'Tidak Diterima';
       default:
         return status;
     }
   }
 
-  function getStatusBadgeClass(status: string): string {
+  function getStatusBadgeClass(status: string, p: Peserta): string {
     switch (status) {
       case 'wawancara':
+        if (p.tanggal_wawancara && p.waktu_wawancara) {
+          return 'bg-blue-100 text-blue-800';
+        }
         return 'bg-yellow-100 text-yellow-800';
       case 'lulus':
         return 'bg-green-100 text-green-800';
@@ -165,8 +172,8 @@ export default function PesertaTable() {
                     {p.nama}
                   </td>
                   <td className="px-4 py-3 text-sm whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(p.status)}`}>
-                      {formatStatus(p.status)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(p.status, p)}`}>
+                      {formatStatus(p.status, p)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
