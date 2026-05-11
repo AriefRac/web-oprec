@@ -10,13 +10,13 @@ export default function ContactCard({ nama, nomor_wa }: ContactCardProps) {
   const waLink = `https://wa.me/${nomor_wa}`;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{nama}</h3>
+    <div className="bg-slate-800/80 rounded-xl border border-slate-700 p-6 hover:shadow-[0_0_15px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all duration-300">
+      <h3 className="text-lg font-semibold text-gray-100 mb-2">{nama}</h3>
       <a
         href={waLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 text-sm text-green-600 hover:text-green-700 font-medium"
+        className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 font-medium transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

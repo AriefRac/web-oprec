@@ -143,40 +143,34 @@ describe("TimelineItem component", () => {
   };
 
   it("renders nama_tahap", () => {
-    render(<TimelineItem item={baseItem} isActive={false} />);
+    render(<TimelineItem item={baseItem} status="future" />);
     expect(screen.getByText("Pendaftaran")).toBeInTheDocument();
   });
 
   it("renders date range", () => {
-    render(<TimelineItem item={baseItem} isActive={false} />);
+    render(<TimelineItem item={baseItem} status="future" />);
     // Check that both dates are rendered (Indonesian locale format)
-    expect(screen.getByText(/1 Juli 2025/)).toBeInTheDocument();
-    expect(screen.getByText(/14 Juli 2025/)).toBeInTheDocument();
+    expect(screen.getByText(/1 Jul 2025/)).toBeInTheDocument();
+    expect(screen.getByText(/14 Jul 2025/)).toBeInTheDocument();
   });
 
-  it("shows active indicator when isActive is true", () => {
-    render(<TimelineItem item={baseItem} isActive={true} />);
-    expect(screen.getByText("Sedang Berlangsung")).toBeInTheDocument();
+  it("shows active indicator when status is active", () => {
+    render(<TimelineItem item={baseItem} status="active" />);
+    expect(screen.getByText("Berlangsung")).toBeInTheDocument();
   });
 
-  it("does not show active indicator when isActive is false", () => {
-    render(<TimelineItem item={baseItem} isActive={false} />);
-    expect(screen.queryByText("Sedang Berlangsung")).not.toBeInTheDocument();
+  it("does not show active indicator when status is future", () => {
+    render(<TimelineItem item={baseItem} status="future" />);
+    expect(screen.queryByText("Berlangsung")).not.toBeInTheDocument();
   });
 
-  it("applies active styling (blue background) when active", () => {
-    const { container } = render(
-      <TimelineItem item={baseItem} isActive={true} />
-    );
-    const contentDiv = container.querySelector(".bg-blue-50");
-    expect(contentDiv).toBeInTheDocument();
+  it("shows completed indicator when status is completed", () => {
+    render(<TimelineItem item={baseItem} status="completed" />);
+    expect(screen.getByText("Selesai")).toBeInTheDocument();
   });
 
-  it("applies inactive styling when not active", () => {
-    const { container } = render(
-      <TimelineItem item={baseItem} isActive={false} />
-    );
-    const contentDiv = container.querySelector(".bg-white");
-    expect(contentDiv).toBeInTheDocument();
+  it("does not show completed indicator when status is future", () => {
+    render(<TimelineItem item={baseItem} status="future" />);
+    expect(screen.queryByText("Selesai")).not.toBeInTheDocument();
   });
 });

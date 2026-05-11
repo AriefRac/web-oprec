@@ -8,13 +8,13 @@ interface StatusResultProps {
 
 function StatusWawancara({ peserta }: StatusResultProps) {
   return (
-    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+    <div className="p-6 bg-blue-900/30 border border-blue-700/50 rounded-lg">
       <div className="flex items-center gap-2 mb-4">
-        <span className="inline-block w-3 h-3 rounded-full bg-blue-500" />
-        <h3 className="text-lg font-semibold text-blue-800">Jadwal Wawancara</h3>
+        <span className="inline-block w-3 h-3 rounded-full bg-blue-400" />
+        <h3 className="text-lg font-semibold text-blue-300">Jadwal Wawancara</h3>
       </div>
-      <p className="text-blue-900 font-medium mb-3">{peserta.nama}</p>
-      <div className="space-y-2 text-sm text-blue-800">
+      <p className="text-blue-200 font-medium mb-3">{peserta.nama}</p>
+      <div className="space-y-2 text-sm text-blue-300">
         <p>
           <span className="font-medium">Hari:</span> {peserta.hari_wawancara}
         </p>
@@ -37,13 +37,13 @@ function StatusLulus({ peserta }: StatusResultProps) {
   const pesan = peserta.pesan_lulus || pesanDefault;
 
   return (
-    <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+    <div className="p-6 bg-green-900/30 border border-green-700/50 rounded-lg">
       <div className="flex items-center gap-2 mb-4">
-        <span className="inline-block w-3 h-3 rounded-full bg-green-500" />
-        <h3 className="text-lg font-semibold text-green-800">Selamat, Kamu Lulus!</h3>
+        <span className="inline-block w-3 h-3 rounded-full bg-green-400" />
+        <h3 className="text-lg font-semibold text-green-300">Selamat, Kamu Lulus!</h3>
       </div>
-      <p className="text-green-800 mb-3">{pesan}</p>
-      <div className="space-y-2 text-sm text-green-900">
+      <p className="text-green-300 mb-3">{pesan}</p>
+      <div className="space-y-2 text-sm text-green-200">
         <p>
           <span className="font-medium">Nama:</span> {peserta.nama}
         </p>
@@ -60,12 +60,12 @@ function StatusTidakLulus({ peserta }: StatusResultProps) {
   const pesan = peserta.pesan_tidak_lulus || pesanDefault;
 
   return (
-    <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+    <div className="p-6 bg-slate-800/80 border border-slate-700 rounded-lg">
       <div className="flex items-center gap-2 mb-4">
         <span className="inline-block w-3 h-3 rounded-full bg-gray-400" />
-        <h3 className="text-lg font-semibold text-gray-700">Hasil Seleksi</h3>
+        <h3 className="text-lg font-semibold text-gray-300">Hasil Seleksi</h3>
       </div>
-      <p className="text-gray-700">{pesan}</p>
+      <p className="text-gray-400">{pesan}</p>
     </div>
   );
 }

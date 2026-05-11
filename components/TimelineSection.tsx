@@ -1,33 +1,39 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import React from "react";
 import { TimelineItem as TimelineItemType } from "@/types/timeline";
 import TimelineItem from "./TimelineItem";
 
 /**
- * Determines if a timeline item is currently active based on the current date.
- * A step is active if today falls within [tanggal_mulai, tanggal_selesai] inclusive.
+ * Determines the status of a timeline item based on the current date.
+ */
+export function getTimelineStatus(
+  tanggalMulai: string,
+  tanggalSelesai: string,
+  today?: Date
+): "completed" | "active" | "future" {
+  const now = today ?? new Date();
+  const start = new Date(tanggalMulai);
+  const end = new Date(tanggalSelesai);
+
+  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+  if (todayDate > endDate) return "completed";
+  if (todayDate >= startDate && todayDate <= endDate) return "active";
+  return "future";
+}
+
+/**
+ * Legacy helper for backward compatibility.
  */
 export function isTimelineActive(
   tanggalMulai: string,
   tanggalSelesai: string,
   today?: Date
 ): boolean {
-  const now = today ?? new Date();
-  const start = new Date(tanggalMulai);
-  const end = new Date(tanggalSelesai);
-
-  // Normalize to date-only comparison (ignore time)
-  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startDate = new Date(
-    start.getFullYear(),
-    start.getMonth(),
-    start.getDate()
-  );
-  const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-
-  return todayDate >= startDate && todayDate <= endDate;
+  return getTimelineStatus(tanggalMulai, tanggalSelesai, today) === "active";
 }
 
 /**
@@ -39,117 +45,92 @@ export function sortTimelineByUrutan(
   return [...items].sort((a, b) => a.urutan - b.urutan);
 }
 
-export default function TimelineSection() {
-  const [timelineItems, setTimelineItems] = useState<TimelineItemType[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchTimeline() {
-      try {
-        const { data, error: fetchError } = await supabase
-          .from("timeline")
-          .select("*")
-          .order("urutan", { ascending: true });
-
-        if (fetchError) {
-          console.error("Timeline fetch error:", fetchError);
-          // Fallback to defaults on error
-          setTimelineItems(defaultTimelineItems);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setTimelineItems(data as TimelineItemType[]);
-        } else {
-          // Fallback: show default timeline stages if no data in Supabase
-          setTimelineItems(defaultTimelineItems);
-        }
-      } catch (err) {
-        console.error("Timeline fetch exception:", err);
-        // Fallback to defaults on error
-        setTimelineItems(defaultTimelineItems);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchTimeline();
-  }, []);
-
-  const sortedItems = sortTimelineByUrutan(timelineItems);
-
-  return (
-    <section id="timeline" className="py-16 px-4">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">
-          Timeline
-        </h2>
-        <p className="text-center text-gray-600 mb-12">
-          Tahapan proses open recruitment dari awal hingga akhir.
-        </p>
-
-        {loading && (
-          <div className="flex justify-center">
-            <div className="animate-pulse text-gray-400">
-              Memuat timeline...
-            </div>
-          </div>
-        )}
-
-        {!loading && (
-          <div className="space-y-0">
-            {sortedItems.map((item) => (
-              <TimelineItem
-                key={item.id}
-                item={item}
-                isActive={isTimelineActive(
-                  item.tanggal_mulai,
-                  item.tanggal_selesai
-                )}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
 /**
- * Default timeline items shown when Supabase data is unavailable.
- * Includes the minimum required stages: Pendaftaran, Wawancara, Pengumuman, Pembuatan Profil.
+ * Default timeline items with updated dates for May 2026.
  */
 const defaultTimelineItems: TimelineItemType[] = [
   {
     id: "default-1",
     nama_tahap: "Pendaftaran",
-    tanggal_mulai: "2025-07-01",
-    tanggal_selesai: "2025-07-14",
+    tanggal_mulai: "2026-05-01",
+    tanggal_selesai: "2026-05-10",
     is_active: false,
     urutan: 1,
   },
   {
     id: "default-2",
     nama_tahap: "Wawancara",
-    tanggal_mulai: "2025-07-15",
-    tanggal_selesai: "2025-07-21",
+    tanggal_mulai: "2026-05-11",
+    tanggal_selesai: "2026-05-14",
     is_active: false,
     urutan: 2,
   },
   {
     id: "default-3",
     nama_tahap: "Pengumuman",
-    tanggal_mulai: "2025-07-22",
-    tanggal_selesai: "2025-07-25",
+    tanggal_mulai: "2026-05-15",
+    tanggal_selesai: "2026-05-15",
     is_active: false,
     urutan: 3,
   },
   {
     id: "default-4",
     nama_tahap: "Pembuatan Profil",
-    tanggal_mulai: "2025-07-26",
-    tanggal_selesai: "2025-07-31",
+    tanggal_mulai: "2026-05-16",
+    tanggal_selesai: "2026-05-20",
     is_active: false,
     urutan: 4,
   },
 ];
+
+export default function TimelineSection() {
+  const sortedItems = sortTimelineByUrutan(defaultTimelineItems);
+
+  return (
+    <section id="timeline" className="py-16 px-4">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-3xl font-bold text-center text-gray-100 mb-4">
+          Timeline
+        </h2>
+        <p className="text-center text-gray-400 mb-12">
+          Tahapan proses open recruitment dari awal hingga akhir.
+        </p>
+
+        {/* Horizontal Timeline */}
+        <div className="overflow-x-auto pb-4">
+          <div className="flex items-start min-w-max mx-auto relative">
+            {/* Connecting line */}
+            <div className="absolute top-[10px] left-[80px] right-[80px] h-0.5 flex">
+              {sortedItems.map((item, index) => {
+                if (index === sortedItems.length - 1) return null;
+                const status = getTimelineStatus(item.tanggal_mulai, item.tanggal_selesai);
+                const nextStatus = getTimelineStatus(
+                  sortedItems[index + 1].tanggal_mulai,
+                  sortedItems[index + 1].tanggal_selesai
+                );
+                const lineColored = status === "completed" || (status === "active" && (nextStatus === "active" || nextStatus === "completed"));
+                return (
+                  <div
+                    key={`line-${item.id}`}
+                    className={`flex-1 h-full ${
+                      lineColored ? "bg-violet-500" : "bg-slate-700"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Timeline items */}
+            {sortedItems.map((item) => (
+              <TimelineItem
+                key={item.id}
+                item={item}
+                status={getTimelineStatus(item.tanggal_mulai, item.tanggal_selesai)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
