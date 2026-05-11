@@ -335,3 +335,158 @@ function showConfig() {
   Logger.log('SUPABASE_ANON_KEY: ' + (config.supabaseAnonKey ? '***' + config.supabaseAnonKey.slice(-8) : '(not set)'));
   Logger.log('SUPABASE_SERVICE_KEY: ' + (config.supabaseServiceKey ? '***' + config.supabaseServiceKey.slice(-8) : '(not set)'));
 }
+
+// ============================================================
+// FULL SYNC WITH DELETE (Sheets = sumber kebenaran)
+// ============================================================
+
+/**
+ * Sinkronisasi penuh: data di Supabase akan SAMA PERSIS dengan Sheets.
+ * - Row yang ada di Sheets tapi belum di Supabase → INSERT
+ * - Row yang ada di keduanya → UPDATE
+ * - Row yang ada di Supabase tapi TIDAK ada di Sheets → DELETE
+ * 
+ * Jalankan manual: Run > syncWithDelete
+ * HATI-HATI: Ini akan menghapus data di Supabase yang tidak ada di Sheets!
+ */
+function syncWithDelete() {
+  if (!validateConfig()) {
+    logSyncResult('error', 0, 'Script Properties belum dikonfigurasi');
+    return;
+  }
+
+  var config = getConfig();
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) {
+    Logger.log('INFO: Tidak ada data di Sheets');
+    // Hapus semua di Supabase
+    deleteAllPeserta(config);
+    logSyncResult('success', 0, 'Sheets kosong, semua data di Supabase dihapus');
+    return;
+  }
+
+  // 1. Ambil semua NIM dari Sheets
+  var dataRange = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
+  var allData = dataRange.getValues();
+  var sheetsNims = {};
+  var sheetsRows = [];
+
+  for (var i = 0; i < allData.length; i++) {
+    var nim = String(allData[i][COLUMN_NIM]).trim();
+    var nama = String(allData[i][COLUMN_NAMA]).trim();
+    if (nim && nama) {
+      sheetsNims[nim] = true;
+      sheetsRows.push({ nim: nim, nama: nama });
+    }
+  }
+
+  // 2. Ambil semua NIM dari Supabase
+  var supabaseNims = getAllNimsFromSupabase(config);
+
+  // 3. Upsert semua data dari Sheets ke Supabase
+  var successCount = 0;
+  var errorCount = 0;
+
+  for (var j = 0; j < sheetsRows.length; j++) {
+    var peserta = {
+      nim: sheetsRows[j].nim,
+      nama: sheetsRows[j].nama,
+      status: 'wawancara'
+    };
+    var result = upsertPeserta(peserta);
+    if (result.success) {
+      successCount++;
+    } else {
+      errorCount++;
+    }
+    Utilities.sleep(100);
+  }
+
+  // 4. Hapus data di Supabase yang tidak ada di Sheets
+  var deleteCount = 0;
+  for (var k = 0; k < supabaseNims.length; k++) {
+    if (!sheetsNims[supabaseNims[k]]) {
+      var delResult = deletePesertaByNim(config, supabaseNims[k]);
+      if (delResult) deleteCount++;
+    }
+  }
+
+  Logger.log('SYNC WITH DELETE COMPLETE: ' + successCount + ' upserted, ' + deleteCount + ' deleted, ' + errorCount + ' errors');
+  logSyncResult('success', successCount, deleteCount > 0 ? deleteCount + ' peserta dihapus dari Supabase' : null);
+}
+
+/**
+ * Ambil semua NIM yang ada di Supabase
+ */
+function getAllNimsFromSupabase(config) {
+  var url = config.supabaseUrl + '/rest/v1/peserta?select=nim';
+  try {
+    var options = {
+      method: 'GET',
+      headers: {
+        'apikey': config.supabaseAnonKey,
+        'Authorization': 'Bearer ' + config.supabaseServiceKey
+      },
+      muteHttpExceptions: true
+    };
+    var response = UrlFetchApp.fetch(url, options);
+    if (response.getResponseCode() === 200) {
+      var data = JSON.parse(response.getContentText());
+      return data.map(function(row) { return row.nim; });
+    }
+  } catch (e) {
+    Logger.log('ERROR getAllNimsFromSupabase: ' + e.message);
+  }
+  return [];
+}
+
+/**
+ * Hapus peserta dari Supabase berdasarkan NIM
+ */
+function deletePesertaByNim(config, nim) {
+  var url = config.supabaseUrl + '/rest/v1/peserta?nim=eq.' + encodeURIComponent(nim);
+  try {
+    var options = {
+      method: 'DELETE',
+      headers: {
+        'apikey': config.supabaseAnonKey,
+        'Authorization': 'Bearer ' + config.supabaseServiceKey
+      },
+      muteHttpExceptions: true
+    };
+    var response = UrlFetchApp.fetch(url, options);
+    var code = response.getResponseCode();
+    if (code === 200 || code === 204) {
+      Logger.log('DELETED: ' + nim);
+      return true;
+    } else {
+      Logger.log('FAILED DELETE ' + nim + ': HTTP ' + code);
+      return false;
+    }
+  } catch (e) {
+    Logger.log('ERROR delete ' + nim + ': ' + e.message);
+    return false;
+  }
+}
+
+/**
+ * Hapus semua peserta dari Supabase (ketika Sheets kosong)
+ */
+function deleteAllPeserta(config) {
+  var url = config.supabaseUrl + '/rest/v1/peserta?nim=neq.';
+  try {
+    var options = {
+      method: 'DELETE',
+      headers: {
+        'apikey': config.supabaseAnonKey,
+        'Authorization': 'Bearer ' + config.supabaseServiceKey
+      },
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch(url, options);
+  } catch (e) {
+    Logger.log('ERROR deleteAllPeserta: ' + e.message);
+  }
+}
