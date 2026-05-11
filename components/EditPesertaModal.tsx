@@ -32,7 +32,7 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
       setHariWawancara(peserta.hari_wawancara || '');
       setTanggalWawancara(peserta.tanggal_wawancara || '');
       setWaktuWawancara(peserta.waktu_wawancara || '');
-      setLokasiWawancara(peserta.lokasi_wawancara || '');
+      setLokasiWawancara(peserta.lokasi_wawancara || 'Ormawa Lt 1 Fakultas Sains');
       setBidang(peserta.bidang || '');
       setErrors([]);
     }
@@ -104,16 +104,8 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" data-testid="edit-peserta-modal">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Edit Peserta</h2>
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-            disabled={loading}
-          >
-            Hapus
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">

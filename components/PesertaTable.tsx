@@ -3,15 +3,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Peserta } from '@/types/peserta';
+import EditPesertaModal from './EditPesertaModal';
 
 export default function PesertaTable() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingPeserta, setEditingPeserta] = useState<Peserta | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
     fetchPeserta();
 
-    // Subscribe to realtime changes on the peserta table
     const channel = supabase
       .channel('peserta-realtime')
       .on(
@@ -43,7 +45,6 @@ export default function PesertaTable() {
       )
       .subscribe();
 
-    // Cleanup subscription on unmount
     return () => {
       supabase.removeChannel(channel);
     };
@@ -65,7 +66,7 @@ export default function PesertaTable() {
   function formatStatus(status: string): string {
     switch (status) {
       case 'wawancara':
-        return 'Wawancara';
+        return 'Menunggu';
       case 'lulus':
         return 'Lulus';
       case 'tidak_lulus':
@@ -88,6 +89,17 @@ export default function PesertaTable() {
     }
   }
 
+  function handleEdit(p: Peserta) {
+    setEditingPeserta(p);
+    setIsEditOpen(true);
+  }
+
+  function handleEditSuccess() {
+    setIsEditOpen(false);
+    setEditingPeserta(null);
+    fetchPeserta();
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -98,16 +110,11 @@ export default function PesertaTable() {
 
   return (
     <div className="px-4 sm:px-6 py-6">
-      {/* Header with add button */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header */}
+      <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">
           Data Peserta ({peserta.length})
         </h2>
-        <button
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-        >
-          Tambah Peserta
-        </button>
       </div>
 
       {/* Table with horizontal scroll on mobile */}
@@ -165,7 +172,6 @@ export default function PesertaTable() {
                       {formatStatus(p.status)}
                     </span>
                   </td>
-                  {/* Jadwal columns - only show for status wawancara */}
                   <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                     {p.status === 'wawancara' ? p.hari_wawancara || '-' : '-'}
                   </td>
@@ -176,24 +182,18 @@ export default function PesertaTable() {
                     {p.status === 'wawancara' ? p.waktu_wawancara || '-' : '-'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {p.status === 'wawancara' ? p.lokasi_wawancara || '-' : '-'}
+                    {p.status === 'wawancara' ? (p.lokasi_wawancara || 'Ormawa Lt 1 Fakultas Sains') : '-'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                     {p.bidang || '-'}
                   </td>
                   <td className="px-4 py-3 text-sm whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="px-3 py-1 text-xs font-medium text-red-700 bg-red-50 rounded hover:bg-red-100 transition-colors"
-                      >
-                        Hapus
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleEdit(p)}
+                      className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))
@@ -201,6 +201,14 @@ export default function PesertaTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Edit Modal */}
+      <EditPesertaModal
+        isOpen={isEditOpen}
+        onClose={() => { setIsEditOpen(false); setEditingPeserta(null); }}
+        onSuccess={handleEditSuccess}
+        peserta={editingPeserta}
+      />
     </div>
   );
 }
