@@ -8,7 +8,6 @@ import ContactCard from "./ContactCard";
 export default function ContactSection() {
   const [contacts, setContacts] = useState<ContactPerson[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchContacts() {
@@ -18,13 +17,15 @@ export default function ContactSection() {
           .select("*");
 
         if (fetchError) {
-          setError("Gagal memuat data contact person.");
+          console.error("Contact fetch error:", fetchError);
+          setContacts([]);
           return;
         }
 
         setContacts(data ?? []);
-      } catch {
-        setError("Terjadi kesalahan jaringan. Silakan coba lagi.");
+      } catch (err) {
+        console.error("Contact fetch exception:", err);
+        setContacts([]);
       } finally {
         setLoading(false);
       }
@@ -47,17 +48,13 @@ export default function ContactSection() {
           <p className="text-center text-gray-500">Memuat data...</p>
         )}
 
-        {error && (
-          <p className="text-center text-red-500">{error}</p>
-        )}
-
-        {!loading && !error && contacts.length === 0 && (
+        {!loading && contacts.length === 0 && (
           <p className="text-center text-gray-500">
             Belum ada data contact person.
           </p>
         )}
 
-        {!loading && !error && contacts.length > 0 && (
+        {!loading && contacts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {contacts.map((contact) => (
               <ContactCard

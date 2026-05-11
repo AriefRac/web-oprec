@@ -42,7 +42,6 @@ export function sortTimelineByUrutan(
 export default function TimelineSection() {
   const [timelineItems, setTimelineItems] = useState<TimelineItemType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchTimeline() {
@@ -53,8 +52,9 @@ export default function TimelineSection() {
           .order("urutan", { ascending: true });
 
         if (fetchError) {
-          setError("Gagal memuat data timeline.");
           console.error("Timeline fetch error:", fetchError);
+          // Fallback to defaults on error
+          setTimelineItems(defaultTimelineItems);
           return;
         }
 
@@ -65,7 +65,6 @@ export default function TimelineSection() {
           setTimelineItems(defaultTimelineItems);
         }
       } catch (err) {
-        setError("Terjadi kesalahan jaringan.");
         console.error("Timeline fetch exception:", err);
         // Fallback to defaults on error
         setTimelineItems(defaultTimelineItems);
@@ -95,10 +94,6 @@ export default function TimelineSection() {
               Memuat timeline...
             </div>
           </div>
-        )}
-
-        {error && !loading && (
-          <p className="text-center text-red-500 text-sm">{error}</p>
         )}
 
         {!loading && (
