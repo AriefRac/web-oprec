@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Peserta, StatusPeserta } from '@/types/peserta';
-import { validatePeserta } from '@/lib/validation';
-import { updatePeserta, deletePeserta } from '@/lib/peserta';
+import { updatePeserta } from '@/lib/peserta';
 
 interface EditPesertaModalProps {
   isOpen: boolean;
@@ -12,11 +11,16 @@ interface EditPesertaModalProps {
   peserta: Peserta | null;
 }
 
+function getHariFromDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const date = new Date(dateStr);
+  return days[date.getDay()] || '';
+}
+
 export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }: EditPesertaModalProps) {
-  const [nim, setNim] = useState('');
   const [nama, setNama] = useState('');
   const [status, setStatus] = useState<StatusPeserta>('wawancara');
-  const [hariWawancara, setHariWawancara] = useState('');
   const [tanggalWawancara, setTanggalWawancara] = useState('');
   const [waktuWawancara, setWaktuWawancara] = useState('');
   const [lokasiWawancara, setLokasiWawancara] = useState('');
@@ -26,10 +30,8 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
 
   useEffect(() => {
     if (peserta) {
-      setNim(peserta.nim || '');
       setNama(peserta.nama || '');
       setStatus(peserta.status || 'wawancara');
-      setHariWawancara(peserta.hari_wawancara || '');
       setTanggalWawancara(peserta.tanggal_wawancara || '');
       setWaktuWawancara(peserta.waktu_wawancara || '');
       setLokasiWawancara(peserta.lokasi_wawancara || 'Ormawa Lt 1 Fakultas Sains');
@@ -48,12 +50,31 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
     if (!peserta) return;
     setErrors([]);
 
-    const data = {
-      nim,
+    // Validation
+    const validationErrors: string[] = [];
+    if (!nama) validationErrors.push('Nama wajib diisi');
+    if (!status) validationErrors.push('Status wajib dipilih');
+    if (status === 'wawancara') {
+      if (!tanggalWawancara) validationErrors.push('Tanggal wawancara wajib diisi');
+      if (!waktuWawancara) validationErrors.push('Jam wawancara wajib diisi');
+      if (!lokasiWawancara) validationErrors.push('Lokasi wawancara wajib diisi');
+    }
+    if (status === 'lulus') {
+      if (!bidang) validationErrors.push('Bidang penempatan wajib diisi');
+    }
+
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    const hari = getHariFromDate(tanggalWawancara);
+
+    const data: Partial<Peserta> = {
       nama,
       status,
       ...(status === 'wawancara' && {
-        hari_wawancara: hariWawancara,
+        hari_wawancara: hari,
         tanggal_wawancara: tanggalWawancara,
         waktu_wawancara: waktuWawancara,
         lokasi_wawancara: lokasiWawancara,
@@ -62,12 +83,6 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
         bidang,
       }),
     };
-
-    const validation = validatePeserta(data);
-    if (!validation.valid) {
-      setErrors(validation.errors);
-      return;
-    }
 
     setLoading(true);
     try {
@@ -80,25 +95,6 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
     }
   }
 
-  async function handleDelete() {
-    if (!peserta) return;
-
-    const confirmed = window.confirm(
-      `Apakah Anda yakin ingin menghapus peserta "${peserta.nama}" (${peserta.nim})?`
-    );
-    if (!confirmed) return;
-
-    setLoading(true);
-    try {
-      await deletePeserta(peserta.id);
-      onSuccess();
-    } catch (err) {
-      setErrors([(err as Error).message || 'Gagal menghapus peserta']);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   if (!isOpen || !peserta) return null;
 
   return (
@@ -106,6 +102,7 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Edit Peserta</h2>
+          <p className="text-sm text-gray-500 mt-1">NIM: {peserta.nim}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
@@ -119,21 +116,6 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
             </div>
           )}
 
-          {/* NIM */}
-          <div>
-            <label htmlFor="edit-nim" className="block text-sm font-medium text-gray-700 mb-1">
-              NIM
-            </label>
-            <input
-              id="edit-nim"
-              type="text"
-              value={nim}
-              onChange={(e) => setNim(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="Masukkan NIM"
-            />
-          </div>
-
           {/* Nama */}
           <div>
             <label htmlFor="edit-nama" className="block text-sm font-medium text-gray-700 mb-1">
@@ -144,45 +126,31 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
               type="text"
               value={nama}
               onChange={(e) => setNama(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="Masukkan nama"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             />
           </div>
 
-          {/* Status */}
+          {/* Status - keputusan diterima/tidak */}
           <div>
             <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              Keputusan
             </label>
             <select
               id="edit-status"
               value={status}
               onChange={(e) => setStatus(e.target.value as StatusPeserta)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
             >
-              <option value="wawancara">Wawancara</option>
-              <option value="lulus">Lulus</option>
-              <option value="tidak_lulus">Tidak Lulus</option>
+              <option value="wawancara">Menunggu (Wawancara)</option>
+              <option value="lulus">Diterima (Lulus)</option>
+              <option value="tidak_lulus">Tidak Diterima</option>
             </select>
           </div>
 
-          {/* Jadwal Wawancara fields - shown when status is wawancara */}
+          {/* Jadwal Wawancara - shown when status is wawancara */}
           {status === 'wawancara' && (
             <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm font-medium text-yellow-800">Jadwal Wawancara</p>
-              <div>
-                <label htmlFor="edit-hari" className="block text-sm font-medium text-gray-700 mb-1">
-                  Hari
-                </label>
-                <input
-                  id="edit-hari"
-                  type="text"
-                  value={hariWawancara}
-                  onChange={(e) => setHariWawancara(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Contoh: Senin"
-                />
-              </div>
               <div>
                 <label htmlFor="edit-tanggal" className="block text-sm font-medium text-gray-700 mb-1">
                   Tanggal
@@ -192,8 +160,13 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
                   type="date"
                   value={tanggalWawancara}
                   onChange={(e) => setTanggalWawancara(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
                 />
+                {tanggalWawancara && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Hari: {getHariFromDate(tanggalWawancara)}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="edit-jam" className="block text-sm font-medium text-gray-700 mb-1">
@@ -204,7 +177,7 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
                   type="time"
                   value={waktuWawancara}
                   onChange={(e) => setWaktuWawancara(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
                 />
               </div>
               <div>
@@ -216,14 +189,13 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
                   type="text"
                   value={lokasiWawancara}
                   onChange={(e) => setLokasiWawancara(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Contoh: Ruang Rapat Lt.3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
                 />
               </div>
             </div>
           )}
 
-          {/* Bidang field - shown when status is lulus */}
+          {/* Bidang - shown when status is lulus */}
           {status === 'lulus' && (
             <div className="p-4 bg-green-50 border border-green-200 rounded-md">
               <label htmlFor="edit-bidang" className="block text-sm font-medium text-gray-700 mb-1">
@@ -233,7 +205,7 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
                 id="edit-bidang"
                 value={bidang}
                 onChange={(e) => setBidang(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
               >
                 <option value="">Pilih bidang</option>
                 <option value="Internal">Internal</option>
@@ -247,19 +219,28 @@ export default function EditPesertaModal({ isOpen, onClose, onSuccess, peserta }
             </div>
           )}
 
+          {/* Info tidak diterima */}
+          {status === 'tidak_lulus' && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-700">
+                Peserta akan menerima pesan bahwa tidak lolos seleksi saat mengecek status.
+              </p>
+            </div>
+          )}
+
           {/* Action buttons */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
               disabled={loading}
             >
               Batal
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
               disabled={loading}
             >
               {loading ? 'Menyimpan...' : 'Simpan'}

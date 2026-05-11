@@ -132,9 +132,6 @@ export default function PesertaTable() {
                 Status
               </th>
               <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hari
-              </th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tanggal
               </th>
               <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -154,7 +151,7 @@ export default function PesertaTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {peserta.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                   Belum ada data peserta.
                 </td>
               </tr>
@@ -173,10 +170,9 @@ export default function PesertaTable() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {p.status === 'wawancara' ? p.hari_wawancara || '-' : '-'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {p.status === 'wawancara' ? p.tanggal_wawancara || '-' : '-'}
+                    {p.status === 'wawancara' && p.tanggal_wawancara
+                      ? `${p.hari_wawancara || ''} ${p.tanggal_wawancara}`.trim()
+                      : '-'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                     {p.status === 'wawancara' ? p.waktu_wawancara || '-' : '-'}
