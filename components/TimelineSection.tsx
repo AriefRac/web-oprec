@@ -42,16 +42,16 @@ const defaultTimelineItems: TimelineItemType[] = [
   {
     id: "default-1",
     nama_tahap: "Pendaftaran",
-    tanggal_mulai: "2026-05-01",
-    tanggal_selesai: "2026-05-10",
+    tanggal_mulai: "2026-05-10",
+    tanggal_selesai: "2026-05-11",
     is_active: false,
     urutan: 1,
   },
   {
     id: "default-2",
     nama_tahap: "Wawancara",
-    tanggal_mulai: "2026-05-11",
-    tanggal_selesai: "2026-05-14",
+    tanggal_mulai: "2026-05-12",
+    tanggal_selesai: "2026-05-13",
     is_active: false,
     urutan: 2,
   },
@@ -62,14 +62,6 @@ const defaultTimelineItems: TimelineItemType[] = [
     tanggal_selesai: "2026-05-15",
     is_active: false,
     urutan: 3,
-  },
-  {
-    id: "default-4",
-    nama_tahap: "Pembuatan Profil",
-    tanggal_mulai: "2026-05-16",
-    tanggal_selesai: "2026-05-20",
-    is_active: false,
-    urutan: 4,
   },
 ];
 
