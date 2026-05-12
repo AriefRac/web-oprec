@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { Peserta } from '@/types/peserta';
 
 interface StatusResultProps {
@@ -55,6 +57,35 @@ function StatusWawancara({ peserta }: StatusResultProps) {
 function StatusLulus({ peserta }: StatusResultProps) {
   const pesanDefault = `Selamat! Kamu telah dinyatakan lulus seleksi Open Recruitment HMPS Informatika.`;
   const pesan = peserta.pesan_lulus || pesanDefault;
+
+  useEffect(() => {
+    // Fire confetti
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#7c3aed', '#a855f7', '#fbbf24', '#34d399'],
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#7c3aed', '#a855f7', '#fbbf24', '#34d399'],
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+
+    frame();
+  }, []);
 
   return (
     <div className="p-6 bg-green-900/30 border border-green-700/50 rounded-lg">
